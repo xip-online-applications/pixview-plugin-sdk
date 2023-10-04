@@ -1,0 +1,24 @@
+{
+	"name": "My plugin",
+	"description": "A new empty plugin",
+	"version": "0.1",
+	"parameters": [
+		{
+		"name": "Text Parameter",
+		"key": "text_param",
+		"description": "Text displayed in plugin",
+		"type": "text",
+		"optional": false
+		},
+		{
+		"name": "Bold text",
+		"key": "bold",
+		"description": "Make text bolded",
+		"type": "checkbox",
+		"optional": true
+		}
+	]
+}
+
+
+

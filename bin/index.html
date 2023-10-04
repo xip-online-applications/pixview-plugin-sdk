@@ -1,0 +1,20 @@
+<html>
+<body>
+    <div>
+        <p id="text-param"></p>
+    </div>
+    <script type="module">
+        import * as PIXClient from "./src/pixview-plugin-sdk.js";
+
+        const client = PIXClient.init();
+
+        client.getParams().then((params) => {
+            const textElement = document.getElementById('text-param');
+            textElement.innerHTML = params.text_param;
+            if (params.bold) {
+                textElement.style.fontWeight = "bold";
+            }
+        })
+    </script>   
+</body>
+</html>

@@ -1,0 +1,256 @@
+<html>
+<head>
+</head>
+
+<body>
+	<div class="container">
+		<div class="config" id="config" x-data="utils">
+			<button style="display:block;width:120px; height:30px;" @click="document.getElementById('getFile').click()">Open plugin...</button>
+			<input type='file' id="getFile" @change="open($event)" webkitdirectory multiple style="display:none">
+			<button x-on:click="reload()">Reload plugin</button> 	
+			<button x-on:click="changeActive()" x-text="active ? 'Active' : 'Inactive'"></button>
+			
+			<div x-data="{ storage: localStorage.getItem('plugin') }"
+			x-init="$watch('storage', (val) => localStorage.setItem('plugin', val))">
+			<h3>Local Storage:</h3>
+			<input x-model="storage">
+			<button x-on:click="clearStorage()">Clear local storage</button> 	
+		</div>
+
+		<template x-if="config !== null">
+			<div>
+				<h3>Parameters:</h3>
+				<template x-for="param in config.parameters">
+					<div>
+						<template x-if="param.type === `text`">
+							<div class="parameter">
+								<div>
+									<small x-text="param.name+' - '"></small>
+									<small class="description" x-text="param.description"></small>
+								</div>
+								<input type="text" x-model="$store.parameters.params[param.key]">
+							</div>
+						</template>
+						<template x-if="param.type === `number`">
+							<div class="parameter">
+								<div>
+									<small x-text="param.name+' - '"></small>
+									<small class="description" x-text="param.description"></small>
+								</div>
+								<input type="number" x-model="$store.parameters.params[param.key]">
+							</div>
+						</template>
+						<template x-if="param.type === `checkbox`">
+							<div class="parameter">
+								<div>
+									<small x-text="param.name+' - '"></small>
+									<small class="description" x-text="param.description"></small>
+								</div>
+								<input type="checkbox" x-model="$store.parameters.params[param.key]">
+							</div>
+						</template>
+						<template x-if="param.type === `multiline`">
+							<div class="parameter">
+								<div>
+									<small x-text="param.name+' - '"></small>
+									<small class="description" x-text="param.description"></small>
+								</div>
+								<textarea x-model="$store.parameters.params[param.key]">
+								</textarea>
+							</div>
+						</template>
+						<template x-if="param.type === `password`">
+							<div class="parameter">
+								<div>
+									<small x-text="param.name+' - '"></small>
+									<small class="description" x-text="param.description"></small>
+								</div>
+								<input type="password" x-model="$store.parameters.params[param.key]">
+							</div>
+						</template>
+					</div>
+				</template>
+			</div>
+		</template>
+		<div id="editor"></div>
+	</div>
+	<div class="iframe-container" id="iframe-container">
+		<iframe class="iframe" id="iframe"></iframe>
+	</div>
+</div>
+<script src="//unpkg.com/alpinejs" defer></script>
+<script src="/ace/ace.js" type="text/javascript" charset="utf-8"></script>
+<script>
+	var editor = ace.edit("editor")
+	editor.session.setMode("ace/mode/html");
+</script>
+<script type="text/javascript">
+	const iframe = document.getElementById("iframe");
+	let channel;
+	let port;
+
+	window.addEventListener(
+		"message",
+		(event) => {
+			if (event.data === 'initialize') {
+				channel = new MessageChannel();
+				port = channel.port1;
+				port.onmessage = (e) => this.onMessage(e);
+				iframe.contentWindow.postMessage(["init"], "*", [channel.port2]);
+			}
+		},
+		false,
+		);
+
+	function onMessage(event) {
+		switch (event.data[0]) {
+		case 'reqParams':
+			const params = Alpine.raw(Alpine.store('parameters').params);
+			port.postMessage(['reqParams', params]);
+			break;
+		case 'fetch':
+			const options = event.data[1];
+			if (options.headers && options.headers['Authorization']) {
+				const auth = options.headers['Authorization'];
+				const match = auth.match(/\{([^)]+)\}/)[1];
+				const token = Alpine.raw(Alpine.store('parameters').params[match]);
+				options.headers['Authorization'] = auth.replace(/\{([^)]+)\}/, token);
+			}
+			fetch("http://localhost:3000/" + options.url, {method: options.method, headers: options.headers, body: JSON.stringify(options.body)}).then((res) => {
+				const contentType = res.headers.get("content-type");
+				if (contentType && contentType.indexOf("application/json") !== -1) {
+					res.json().then(data => {
+						port.postMessage(['fetch', data]);
+					});
+				} else {
+					res.text().then(data => {
+						port.postMessage(['fetch', data]);
+					});
+				}
+			});
+			break;
+		case 'saveToLocalStorage':
+			const item = event.data[1];
+			localStorage.setItem('plugin', item);
+			port.postMessage(['saveToLocalStorage', 'Saved to storage']);
+			break;
+		case 'getLocalStorage':
+			const item2 = localStorage.getItem('plugin');
+			port.postMessage(['getLocalStorage', item2]);
+			break;
+		case 'getPlayer':
+			const player = {
+				"id": 2,
+				"name": "Test Player",
+				"status": "active",
+				"location": {
+					"id": 1,
+					"name": "XIP",
+					"address": {
+						"address": "Piet Heinstraat",
+						"zipcode": "7511 JE",
+						"city": "Enschede",
+						"country": "Nederland",
+						"number": 12,
+						"addition": ""
+					},
+					"latitude": "52.2216067616560050",
+					"longitude": "6.8912095109329540"
+				}
+			}
+			port.postMessage(['getPlayer', player])
+			break;
+		default:
+			console.log("No such event found.")
+			break;
+		}
+	}
+</script>
+<script>
+	document.addEventListener('alpine:init', () => init())
+	function init() {
+		Alpine.store('parameters', {
+			params: {}
+		})
+
+		Alpine.data('utils', () => ({
+			active: true,
+			config: null,
+			basePath: null,
+			reload(){
+				var doc = (new DOMParser).parseFromString(editor.getValue(), "text/html");
+				var base = doc.createElement("base");
+				base.setAttribute('href', this.basePath);
+				doc.documentElement.getElementsByTagName("head")[0].appendChild(base);
+				iframe.srcdoc = doc.documentElement.outerHTML;
+			},
+			changeActive(){
+				this.active = !this.active;
+				iframe.contentWindow.postMessage(["slideChange", this.active], "*");
+			},
+			open(event) {
+				for (const file of event.target.files) {
+					let reader = new FileReader();
+					var self = this;
+					reader.onload = function() {
+						if(file.name === 'index.html') {
+							self.basePath = file.webkitRelativePath.split('/')[0] + '/';
+							editor.session.setValue(reader.result)
+						} else if(file.name === 'manifest.json') {
+							const config = reader.result;
+							self.config = JSON.parse(config);
+						}
+					}
+					reader.readAsText(file) 
+				}  
+			},
+			clearStorage(){
+				localStorage.clear();
+			}
+		}))
+	}
+</script>
+</body>
+<style>
+	.container {
+		display: flex;
+		justify-content: space-between;
+	}
+
+	.config {
+		width:50%;
+	}
+
+	.iframe-container {
+		max-width: 60%;
+		max-height: 100%;
+		width: 100vw;
+		height: 100vh;
+		flex-basis: 75%;
+	}
+	.iframe {
+		min-width: 95%;
+		min-height: 75%;
+	}
+	.localStorage {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	#editor { 
+		width: 100%;
+		height: 400px;
+		margin-top: 2%;
+	}
+
+	.description {
+		font-size: 80%;
+		color: #9E9E9E;
+	}
+
+	.parameter {
+		margin-top: 1rem;
+	}
+
+</style>
+</html>
