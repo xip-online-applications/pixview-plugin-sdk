@@ -37,7 +37,7 @@ When you've sufficiently tested your plugin, run `pixcli package <directory>` to
 - cute_dog.jpg
 
 ## Manifest
-Each plugin must define a *manifest.json* file that describes the plugin. A template will be available in the src folder. A plugin can be configured as follows:
+Each plugin must define a *manifest.json* file that describes the plugin. A plugin can be configured as follows:
 ```
 {
 	"name": "My plugin",
@@ -80,7 +80,7 @@ Defines the list of parameters your plugin accepts as input by a user. The follo
 - **secure** If set to true, value will be encrypted. Used for API tokens.
 
 ## SDK API
-A plugin is essentially an *index.html* file containing different HTML elements and JavaScript. An example will be available in the src folder. To allow the plugin to run, *index.html* will have to import the *pixview-plugin-sdk.js* file. The SDK will facilitate the communication between your plugin and the Pixview Player. After initializing the client, the following methods are available:
+A plugin is essentially an *index.html* file containing different HTML elements and JavaScript. To allow the plugin to run, *index.html* will have to import the SDK file. The SDK will facilitate the communication between your plugin and the Pixview Player. After initializing the client, the following methods are available:
 
 ### getParams()
 Requests list of parameters as defined by *manifest.json*.
