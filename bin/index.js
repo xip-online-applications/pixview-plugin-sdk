@@ -80,7 +80,7 @@ program.command('package')
 			if (!valid){ 
 				console.log(validate.errors)
 			} else {
-				const name = str.replace(/[^\w ]/, '');
+				const name = str.replace(/\//g, '');
 				const output = fs.createWriteStream(path.join(__dirname, '..', name + '.zip'));
 				const archive = archiver('zip', {
 					zlib: { level: 9 }
