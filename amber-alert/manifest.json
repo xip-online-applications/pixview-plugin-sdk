@@ -1,0 +1,14 @@
+{
+	"name": "Amber Alert",
+	"description": "This plugin will display Amber Alerts when one has been issued near your player or nationally.",
+	"version": "0.1",
+	"parameters": [
+		{
+			"name": "Radius",
+			"key": "radius",
+			"description": "The radius in kilometers around your player to check for Amber Alerts. Default is 50.",
+			"type": "number",
+			"optional": true
+		}
+	]
+}

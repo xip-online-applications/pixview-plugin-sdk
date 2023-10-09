@@ -1,0 +1,190 @@
+<html>
+<head>
+    <style>
+        html, body {
+            height: 100%;
+            background-color: white;
+            font-family: Helvetica, Arial, sans-serif;
+            position: relative;
+        }
+
+        .center {
+            margin: 0;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+        }
+
+        .container {
+            height: 20rem;
+            width: 40rem;
+            padding: 2.5rem;
+            background-color: rgb(24, 39, 103);
+            display: flex;
+            flex-direction: row;
+            position: relative;
+        }
+
+        .person-image-container {
+            position: relative;
+            margin-right: 2.5rem;
+        }
+        .person-image-background {
+            margin-top: -2.5rem;
+            margin-left: -2.5rem;
+            width: 7.5rem;
+            height: 25rem;
+            background-color: rgb(228, 63, 15);
+            position: absolute;
+        }
+        .person-image {
+            position: relative;
+            z-index: 1;
+            width: 15rem;
+            height: 20rem;
+            background: url("assets/persoon.jpg") no-repeat center center;
+            background-size: cover;
+        }
+
+        .person-info {
+            color: white;
+        }
+        .person-info h1 {
+            text-transform: uppercase;
+        }
+        .amber-alert-name {
+            background-color: rgb(228, 63, 15);
+            padding: 0.5rem 1rem;
+            margin-top: -0.5rem;
+            border-radius: 1.5rem;
+            font-weight: bold;
+        }
+
+        .police-emblem {
+            width: 2.5rem;
+            height: 2.5rem;
+            position: absolute;
+            right: 2.5rem;
+            top: 2.5rem;
+            background: white;
+        }
+        .police-emblem img {
+            width: 100%;
+        }
+
+
+        .qr-code {
+            position: absolute;
+            bottom: 2.5rem;
+            right: 2.5rem;
+            background: white;
+        }
+        #qrcode-more-info {
+            width: 5rem;
+            height: 5rem;
+        }
+
+  </style>
+</head>
+<body>
+    <div class="center">
+        <div class="container">
+            <div class="person-image-container">
+                <div class="person-image-background"></div>
+                <div class="person-image" id="person-image"></div>
+            </div>
+            <div class="person-info">
+                <span class="amber-alert-name">AMBER ALERT</span>
+                <h1 id="person-type">Vermist</h1>
+                <h2 class="name" id="person-name">Youri (21)</h2>
+                <p id="person-remarks">Hier staat de beschrijving van de persoon.</p>
+                <h2 class="call">Bel 0800-6070</h2>
+            </div>
+            <div class="police-emblem">
+                <img src="https://www.burgernet.nl/themes/burgernet_theme/assets/svg/brand/politie-bm.png">
+            </div>
+<!--            <div class="qr-code">-->
+<!--                <div id="qrcode-more-info"></div>-->
+<!--            </div>-->
+        </div>
+    </div>
+
+    <script type="module">
+        import * as PIXClient from "./deps/pixview-plugin-sdk.js";
+        // import * as QRious from "./deps/qrious.min";
+        import * as xml2json from "./deps/xml2json.js";
+
+        const client = PIXClient.init();
+
+        const params = await client.getParams();
+        const radius = params.radius ? params.radius : 50;
+
+        const player = await client.getPlayer();
+        const latitude = player.location.latitude;
+        const longitude = player.location.longitude;
+
+        // const ambertAlertRequest = xml2json(await client.request({
+        //     url: 'https://services.burgernetcdn.nl/landactiehost/api/v1/alerts',
+        //     method: 'get',
+        // }));
+        const ambertAlertRequest = [
+            {
+                "Alert": {
+                    "AlertId": "33001710",
+                    "AlertLevel": "10",
+                    "Area": {
+                        "Circle": {
+                            "@nil": "true"
+                        },
+                        "CircleKM": {
+                            "@nil": "true"
+                        },
+                        "Description": {
+                            "@nil": "true"
+                        }
+                    },
+                    "Location": {
+                        "Description": {
+                            "@nil": "true"
+                        },
+                        "Latitude": {
+                            "@nil": "true"
+                        },
+                        "Longitude": {
+                            "@nil": "true"
+                        }
+                    },
+                    "Message": {
+                        "Description": "klein met bruine haren",
+                        "DescriptionExt": "Vermist",
+                        "Media": {
+                            "Image": "assets/persoon.jpg",
+                            "SmallImage": "assets/persoon.jpg"
+                        },
+                        "Media_URL": {
+                            "@nil": "true"
+                        },
+                        "Readmore_URL": "https://www.burgernet.nl/burgernet/33001710",
+                        "Title": "Yvonne (4)"
+                    },
+                    "MessageId": "12297",
+                    "Scope": "Public",
+                    "Sender": "KindAlarmPortal",
+                    "Sent": "1637319181",
+                    "State": "Actual",
+                    "Type": "Alert"
+                }
+            }
+        ];
+        const alert = ambertAlertRequest[0].Alert;
+
+        document.getElementById('person-name').textContent = alert.Message.Title;
+        document.getElementById('person-type').textContent = alert.Message.DescriptionExt;
+        document.getElementById('person-remarks').textContent = alert.Message.Description;
+        document.getElementById('person-image').style.backgroundImage = `url(${alert.Message.Media.Image})`;
+        // new QRious({element: document.getElementById("qrcode-more-info"), value: alert.Message.Readmore_URL});
+    </script>
+</body>  
+</html>
